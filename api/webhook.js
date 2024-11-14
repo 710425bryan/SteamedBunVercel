@@ -1,6 +1,6 @@
 const express = require('express');
 const line = require('@line/bot-sdk');
-const admin = require('firebase-admin');
+const { db } = require('./firebase');
 
 
 const config = {
@@ -10,18 +10,10 @@ const config = {
 const client = new line.messagingApi.MessagingApiClient({
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
 });
-const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_SDK_KEY);
 
 const app = express();
 
 app.use(express.json());
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: process.env.VITE_FIREBASE_DATABASE_URL,
-});
-
-const db = admin.database();
 
 // Line Webhook Endpoint
 app.post('/api/webhook', line.middleware(config), (req, res) => {
