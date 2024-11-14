@@ -2,24 +2,16 @@ const express = require('express');
 const line = require('@line/bot-sdk');
 
 const config = {
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
   channelSecret: process.env.LINE_CHANNEL_SECRET,
 };
 
-const client = new line.Client(config);
+const client = new line.messagingApi.MessagingApiClient({
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+});
+
 const app = express();
 
-app.get('/', (req, res) => {
-  res.send('Hello World');
-});
-
-app.use((req, res, next) => {
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'none'; script-src 'self' https://vercel.live"
-  );
-  next();
-});
+console.log('LINE Channel Secret:', config);
 
 // Line Webhook Endpoint
 app.post('/api/webhook', line.middleware(config), (req, res) => {
@@ -31,19 +23,26 @@ app.post('/api/webhook', line.middleware(config), (req, res) => {
     });
 });
 
-
+// event handler
 function handleEvent(event) {
-  console.log('Received event:', event); // 記錄接收到的事件
-
-  if (event.type === 'message' && event.message.type === 'text') {
-    console.log('User message:', event.message.text); // 記錄使用者的訊息
-    return client.replyMessage(event.replyToken, {
-      type: 'text',
-      text: `你說了: ${event.message.text}`,
-    });
-  } else {
+  if (event.type !== 'message' || event.message.type !== 'text') {
+    // ignore non-text-message event
     return Promise.resolve(null);
   }
+
+  // create an echoing text message
+  const echo = { type: 'text', text: event.message.text };
+
+  // use reply API
+  return client.replyMessage({
+    replyToken: event.replyToken,
+    messages: [echo],
+  });
 }
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`listening on ${port}`);
+});
 
 module.exports = app;
