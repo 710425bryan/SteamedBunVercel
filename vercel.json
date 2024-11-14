@@ -1,14 +1,14 @@
 {
   "builds": [
     {
-      "src": "api/lineWebhook.js",
+      "src": "api/webhook.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api/lineWebhook",
-      "dest": "api/lineWebhook.js"
+      "src": "/api/webhook",
+      "dest": "api/webhook.js"
     }
   ]
 }
