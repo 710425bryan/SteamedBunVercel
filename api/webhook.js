@@ -15,6 +15,7 @@ console.log('LINE Channel Secret:', config);
 
 // Line Webhook Endpoint
 app.post('/api/webhook', line.middleware(config), (req, res) => {
+  console.log('req.body.events', req.body.events);
   Promise.all(req.body.events.map(handleEvent))
     .then((result) => res.status(200).json(result))  // 確保回傳 200
     .catch((err) => {
@@ -25,6 +26,7 @@ app.post('/api/webhook', line.middleware(config), (req, res) => {
 
 // event handler
 function handleEvent(event) {
+  console.log('event', event);
   if (event.type !== 'message' || event.message.type !== 'text') {
     // ignore non-text-message event
     return Promise.resolve(null);
