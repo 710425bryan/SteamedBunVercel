@@ -13,17 +13,21 @@ const client = new line.messagingApi.MessagingApiClient({
 
 const app = express();
 
-app.use(express.json());
-
 // Line Webhook Endpoint
 app.post('/api/webhook', line.middleware(config), (req, res) => {
   console.log('req.body.events', req.body.events);
-  Promise.all(req.body.events.map(handleEvent))
-    .then((result) => res.status(200).json(result))  // 確保回傳 200
-    .catch((err) => {
-      console.error(err);
-      res.status(200).end();
-    });
+
+  try {
+    Promise.all(req.body.events.map(handleEvent))
+      .then((result) => res.status(200).json(result))  // 確保回傳 200
+      .catch((err) => {
+        console.error('Webhook error:', error);
+        res.status(200).end();
+      });
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 // event handler
