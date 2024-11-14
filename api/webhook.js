@@ -1,5 +1,7 @@
 const express = require('express');
 const line = require('@line/bot-sdk');
+const admin = require('firebase-admin');
+
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET,
@@ -8,10 +10,18 @@ const config = {
 const client = new line.messagingApi.MessagingApiClient({
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
 });
+const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_SDK_KEY);
 
 const app = express();
 
-console.log('LINE Channel Secret:', config);
+app.use(express.json());
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: process.env.VITE_FIREBASE_DATABASE_URL,
+});
+
+const db = admin.database();
 
 // Line Webhook Endpoint
 app.post('/api/webhook', line.middleware(config), (req, res) => {
@@ -25,21 +35,46 @@ app.post('/api/webhook', line.middleware(config), (req, res) => {
 });
 
 // event handler
-function handleEvent(event) {
-  console.log('event', event);
+async function handleEvent(event) {
+  console.log('handleEvent event:', event);
   if (event.type !== 'message' || event.message.type !== 'text') {
     // ignore non-text-message event
     return Promise.resolve(null);
   }
 
-  // create an echoing text message
-  const echo = { type: 'text', text: event.message.text };
+  try {
+    // create an echoing text message
+    const echo = { type: 'text', text: event.message.text };
+    // save to firebase
+    const messageData = event;
+    const messageRef = db.ref('messages');
+    const timestamp = new Date().toISOString();
 
-  // use reply API
-  return client.replyMessage({
-    replyToken: event.replyToken,
-    messages: [echo],
-  });
+    await messageRef.push(messageData);
+
+    const chatRef = db.ref(`chats/${event.source.userId}`);
+    await chatRef.update({
+      lastMessage: {
+        content: event.message.text,
+        timestamp,
+      },
+      unreadCount: admin.database.ServerValue.increment(1),
+    });
+
+    // use reply API
+    return client.replyMessage({
+      replyToken: event.replyToken,
+      messages: [echo],
+    });
+  } catch (err) {
+    console.error(err);
+    return client.replyMessage({
+      replyToken: event.replyToken,
+      messages: [echo],
+    });
+  }
+
+
 }
 
 const port = process.env.PORT || 3000;
