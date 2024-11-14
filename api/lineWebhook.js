@@ -12,12 +12,13 @@ const app = express();
 // Line Webhook Endpoint
 app.post('/api/webhook', line.middleware(config), (req, res) => {
   Promise.all(req.body.events.map(handleEvent))
-    .then((result) => res.json(result))
+    .then((result) => res.status(200).json(result))  // 確保回傳 200
     .catch((err) => {
       console.error(err);
       res.status(500).end();
     });
 });
+
 
 function handleEvent(event) {
   console.log('Received event:', event); // 記錄接收到的事件
