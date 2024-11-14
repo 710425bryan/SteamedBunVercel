@@ -20,7 +20,10 @@ app.post('/api/webhook', line.middleware(config), (req, res) => {
 });
 
 function handleEvent(event) {
+  console.log('Received event:', event); // 記錄接收到的事件
+
   if (event.type === 'message' && event.message.type === 'text') {
+    console.log('User message:', event.message.text); // 記錄使用者的訊息
     return client.replyMessage(event.replyToken, {
       type: 'text',
       text: `你說了: ${event.message.text}`,
