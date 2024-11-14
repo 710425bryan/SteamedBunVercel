@@ -46,7 +46,16 @@ async function handleEvent(event) {
     const messageRef = db.ref('messages');
     const timestamp = new Date().toISOString();
 
-    await messageRef.push(messageData);
+    await messageRef.push({
+      ...messageData,
+      senderId: event.source.userId,
+      userId: event.source.userId,
+      content: event.message.text,
+      timestamp,
+      type: event.message.type,
+      status: 'received',
+      chatId: event.source.userId,
+    });
 
     const chatRef = db.ref(`chats/${event.source.userId}`);
     await chatRef.update({
