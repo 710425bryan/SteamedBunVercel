@@ -13,6 +13,14 @@ app.get('/', (req, res) => {
   res.send('Hello World');
 });
 
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'none'; script-src 'self' https://vercel.live"
+  );
+  next();
+});
+
 // Line Webhook Endpoint
 app.post('/api/webhook', line.middleware(config), (req, res) => {
   Promise.all(req.body.events.map(handleEvent))
