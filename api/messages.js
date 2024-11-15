@@ -1,9 +1,9 @@
 const express = require('express');
 const axios = require('axios');
 
-const app = express();
+const router = express.Router();
 
-app.post('/api/messages', async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { to, messages } = req.body;
 
@@ -27,9 +27,4 @@ app.post('/api/messages', async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`listening on ${port}`);
-});
-
-module.exports = app;
+module.exports = router;
