@@ -11,6 +11,7 @@ app.use(cors({
 
 app.post('/api/messages', async (req, res) => {
   try {
+    console.log('messages body:', req.body);
     const { to, messages } = req.body;
 
     const response = await axios.post('https://api.line.me/v2/bot/message/push', {
