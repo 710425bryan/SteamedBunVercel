@@ -9,9 +9,11 @@ app.use(cors({
   methods: ['GET', 'POST'] // 根據需求添加其他方法，如 'PUT', 'DELETE' 等
 }));
 
+app.use(express.json());
+
 app.post('/api/messages', async (req, res) => {
   try {
-    console.log('messages body:', req);
+    console.log('messages body:', req.body);
     const { to, messages } = req.body;
 
     const response = await axios.post('https://api.line.me/v2/bot/message/push', {
@@ -32,6 +34,11 @@ app.post('/api/messages', async (req, res) => {
       details: error.response?.data || error.message
     });
   }
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
 
 module.exports = app;
