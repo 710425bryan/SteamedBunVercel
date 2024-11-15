@@ -1,14 +1,22 @@
 {
   "builds": [
     {
-      "src": "api/webhook.js",
+      "src": "api/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
+      "src": "/api",
+      "dest": "api/index.js"
+    },
+    {
       "src": "/api/webhook",
       "dest": "api/webhook.js"
+    },
+    {
+      "src": "/api/messages",
+      "dest": "api/messages.js"
     }
   ]
 }
