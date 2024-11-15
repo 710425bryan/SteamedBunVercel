@@ -1,9 +1,8 @@
 const express = require('express');
-const messages = require('./messages');
-
 const app = express();
 
-app.use(express.json());
-app.use('/api/messages', messages);
+app.get('/', (req, res) => {
+    res.send('Hello from index route');
+});
 
 module.exports = app;

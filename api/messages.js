@@ -3,7 +3,7 @@ const axios = require('axios');
 
 const app = express();
 
-app.post('/', async (req, res) => {
+app.post('/api/messages', async (req, res) => {
   try {
     const { to, messages } = req.body;
 
