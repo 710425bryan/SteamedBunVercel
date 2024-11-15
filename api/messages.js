@@ -41,13 +41,16 @@ app.post('/api/markAsRead', async (req, res) => {
   try {
     console.log('messages body:', req.body);
     const { messageId } = req.body;
-
+    if (!messageId) {
+      return res.status(400).json({ error: 'Missing messageId' });
+    }
     const response = await axios.post(`https://api.line.me/v2/bot/message/${messageId}/read`, null, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`
       }
     });
+    console.log('成功標記為已讀:', response.status, response.data);
 
     return res.status(200).json(response.data);
   } catch (error) {
