@@ -1,7 +1,13 @@
 const express = require('express');
 const axios = require('axios');
+const cors = require('cors');
 
 const app = express();
+
+app.use(cors({
+  origin: '*', // 替換為你的前端域名，或用 '*' 允許所有來源
+  methods: ['GET', 'POST'] // 根據需求添加其他方法，如 'PUT', 'DELETE' 等
+}));
 
 app.post('/api/messages', async (req, res) => {
   try {
