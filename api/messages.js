@@ -36,6 +36,33 @@ app.post('/api/messages', async (req, res) => {
   }
 });
 
+
+app.post('/api/messagesUpdateReadStatus', async (req, res) => {
+  try {
+    console.log('messages body:', req.body);
+    const { messageId } = req.body;
+
+    const response = await axios.post(`https://api.line.me/v2/bot/message/${messageId}/read`, {
+      to,
+      messages
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`
+      }
+    });
+
+    return res.status(200).json(response.data);
+  } catch (error) {
+    console.error('Error sending LINE message:', error.response?.data || error.message);
+    return res.status(500).json({
+      error: 'Failed to send message',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

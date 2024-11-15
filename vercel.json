@@ -17,6 +17,10 @@
     {
       "src": "/api/messages",
       "dest": "api/messages.js"
+    },
+    {
+      "src": "/api/messagesUpdateReadStatus",
+      "dest": "api/messages.js"
     }
   ]
 }
