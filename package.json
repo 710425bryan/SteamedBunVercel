@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@line/bot-sdk": "^9.5.0",
+    "axios": "^1.7.7",
     "express": "^4.21.1",
     "firebase-admin": "^13.0.0",
     "line-bot-sdk": "^0.1.4"
