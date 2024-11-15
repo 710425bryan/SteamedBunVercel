@@ -30,6 +30,31 @@ app.post('/api/webhook', line.middleware(config), (req, res) => {
   }
 });
 
+// 驗證 LINE 簽章
+const validateSignature = (body, signature) => {
+  const channelSecret = process.env.LINE_MESSAGING_CHANNEL_SECRET;
+  const hash = crypto
+    .createHmac('SHA256', channelSecret)
+    .update(JSON.stringify(body))
+    .digest('base64');
+  return hash === signature;
+};
+
+// 從 LINE 獲取用戶資料
+const getUserProfile = async (userId) => {
+  try {
+    const response = await axios.get(`https://api.line.me/v2/bot/profile/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.LINE_MESSAGING_CHANNEL_TOKEN}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return null;
+  }
+};
+
 // Update or create chat room
 async function updateOrCreateChat(userId, userProfile, messageContent, timestamp) {
   try {
@@ -49,7 +74,7 @@ async function updateOrCreateChat(userId, userProfile, messageContent, timestamp
     };
 
     if (chatExists) {
-      // 如果聊天室已存在，更新必要的字段並增加未讀計數
+      // 如果聊天室已存在，更新必要的字段並增加未讀計數 (這裡我們增加了未讀計數)
       await chatRef.update({
         ...chatData,
         unreadCount: admin.database.ServerValue.increment(1),
@@ -83,10 +108,13 @@ async function handleEvent(event) {
     const messageData = event;
     const messageRef = db.ref('messages');
     const timestamp = new Date().toISOString();
+    const userProfile = await getUserProfile(event.source.userId);
 
     await messageRef.push({
       ...messageData,
       senderId: event.source.userId,
+      senderName: userProfile ? userProfile.displayName : 'LINE User',
+      senderAvatar: userProfile ? userProfile.pictureUrl : 'https://via.placeholder.com/50',
       userId: event.source.userId,
       content: event.message.text,
       timestamp,
@@ -95,7 +123,7 @@ async function handleEvent(event) {
       chatId: event.source.userId,
     });
 
-    updateOrCreateChat(event.source.userId, event.source.profile, event.message.text, timestamp);
+    updateOrCreateChat(event.source.userId, userProfile, event.message.text, timestamp);
 
     // use reply API
     return client.replyMessage({
