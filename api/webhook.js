@@ -30,6 +30,44 @@ app.post('/api/webhook', line.middleware(config), (req, res) => {
   }
 });
 
+// 更新或創建聊天室
+async function updateOrCreateChat(userId, userProfile, messageContent, timestamp) {
+  try {
+    const chatRef = db.ref(`chats/${userId}`);
+    const chatSnapshot = await chatRef.once('value');
+    const chatExists = chatSnapshot.exists();
+
+    const chatData = {
+      userId,
+      userName: userProfile ? userProfile.displayName : '',
+      userAvatar: userProfile ? userProfile.pictureUrl : 'https://via.placeholder.com/50',
+      lastMessage: {
+        content: messageContent,
+        timestamp,
+      },
+      updatedAt: timestamp,
+    };
+
+    if (chatExists) {
+      // 如果聊天室已存在，更新必要的字段並增加未讀計數
+      await chatRef.update({
+        ...chatData,
+        unreadCount: admin.database.ServerValue.increment(1),
+      });
+    } else {
+      // 如果聊天室不存在，創建新的聊天室
+      await chatRef.set({
+        ...chatData,
+        unreadCount: 1,
+        createdAt: timestamp,
+      });
+    }
+  } catch (error) {
+    console.error('Error updating/creating chat:', error);
+    throw error;
+  }
+};
+
 // event handler
 async function handleEvent(event) {
   console.log('handleEvent event:', event);
@@ -57,14 +95,7 @@ async function handleEvent(event) {
       chatId: event.source.userId,
     });
 
-    const chatRef = db.ref(`chats/${event.source.userId}`);
-    await chatRef.update({
-      lastMessage: {
-        content: event.message.text,
-        timestamp,
-      },
-      unreadCount: admin.database.ServerValue.increment(1),
-    });
+    updateOrCreateChat(event.source.userId, event.source.profile, event.message.text, timestamp);
 
     // use reply API
     return client.replyMessage({
