@@ -19,7 +19,7 @@
       "dest": "api/messages.js"
     },
     {
-      "src": "/api/messagesUpdateReadStatus",
+      "src": "/api/markAsRead",
       "dest": "api/messages.js"
     }
   ]

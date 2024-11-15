@@ -37,15 +37,12 @@ app.post('/api/messages', async (req, res) => {
 });
 
 
-app.post('/api/messagesUpdateReadStatus', async (req, res) => {
+app.post('/api/markAsRead', async (req, res) => {
   try {
     console.log('messages body:', req.body);
     const { messageId } = req.body;
 
-    const response = await axios.post(`https://api.line.me/v2/bot/message/${messageId}/read`, {
-      to,
-      messages
-    }, {
+    const response = await axios.post(`https://api.line.me/v2/bot/message/${messageId}/read`, null, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`
