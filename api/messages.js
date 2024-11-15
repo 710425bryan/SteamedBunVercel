@@ -26,10 +26,10 @@ app.post('/api/messages', async (req, res) => {
       }
     });
 
-    res.status(200).json(response.data);
+    return res.status(200).json(response.data);
   } catch (error) {
     console.error('Error sending LINE message:', error.response?.data || error.message);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to send message',
       details: error.response?.data || error.message
     });
