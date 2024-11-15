@@ -1,9 +1,9 @@
 const express = require('express');
 const axios = require('axios');
 
-const router = express.Router();
+const app = express();
 
-router.post('/', async (req, res) => {
+app.post('/', async (req, res) => {
   try {
     const { to, messages } = req.body;
 
@@ -27,4 +27,4 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = app;
