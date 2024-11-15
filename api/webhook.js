@@ -30,7 +30,7 @@ app.post('/api/webhook', line.middleware(config), (req, res) => {
   }
 });
 
-// 更新或創建聊天室
+// Update or create chat room
 async function updateOrCreateChat(userId, userProfile, messageContent, timestamp) {
   try {
     const chatRef = db.ref(`chats/${userId}`);
