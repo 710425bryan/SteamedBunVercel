@@ -3,6 +3,7 @@ const line = require('@line/bot-sdk');
 const { db } = require('./firebase');
 const axios = require('axios');
 const { get } = require('lodash');
+const admin = require('firebase-admin');
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET,
