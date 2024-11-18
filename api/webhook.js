@@ -92,15 +92,8 @@ async function handleEvent(event) {
   }
 
   try {
-    let messageContent = event.message.text;
-    // if (event.message.type === 'sticker') {
-    //   // sticker
-    //   messageContent = `https://stickershop.line-scdn.net/stickershop/v1/sticker/${event.message.packageId}/iOS/${event.message.stickerId}.png`;
-    //   console.log('messageContent', messageContent);
-    // }
-
     // create an echoing text message
-    const echo = { type: 'text', text: messageContent };
+    const echo = { type: 'text', text: event.message.text };
     // save to firebase
     const messageData = event;
     const messageRef = db.ref('messages');
@@ -113,7 +106,7 @@ async function handleEvent(event) {
       senderName: userProfile ? userProfile.displayName : 'LINE User',
       senderAvatar: userProfile ? userProfile.pictureUrl : 'https://via.placeholder.com/50',
       userId: event.source.userId,
-      content: messageContent,
+      content: event.message.text,
       timestamp,
       type: event.message.type,
       status: 'received',
@@ -122,7 +115,7 @@ async function handleEvent(event) {
       packageId: event.message.packageId,
     });
 
-    updateOrCreateChat(event.source.userId, userProfile, messageContent, timestamp);
+    updateOrCreateChat(event.source.userId, userProfile, event.message.text, timestamp);
 
     // use reply API
     return client.replyMessage({
