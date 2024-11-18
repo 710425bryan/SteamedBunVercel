@@ -107,7 +107,7 @@ async function handleEvent(event) {
       senderName: userProfile ? userProfile.displayName : 'LINE User',
       senderAvatar: userProfile ? userProfile.pictureUrl : 'https://via.placeholder.com/50',
       userId: event.source.userId,
-      content: event.message.text,
+      content: get(event, 'message.text') || '',
       timestamp,
       type: event.message.type,
       status: 'received',
