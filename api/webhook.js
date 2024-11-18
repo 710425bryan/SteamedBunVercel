@@ -93,13 +93,18 @@ async function handleEvent(event) {
   }
 
   try {
+    const messageText = get(event, 'message.text') || '';
+    const messageStickerId = get(event, 'message.stickerId') || '';
+    const messagePackageId = get(event, 'message.packageId') || '';
     // create an echoing text message
-    const echo = { type: 'text', text: event.message.text };
+    const echo = { type: 'text', text: messageText };
     // save to firebase
     const messageData = event;
     const messageRef = db.ref('messages');
     const timestamp = new Date().toISOString();
     const userProfile = await getUserProfile(event.source.userId);
+
+
 
     await messageRef.push({
       ...messageData,
@@ -107,28 +112,28 @@ async function handleEvent(event) {
       senderName: userProfile ? userProfile.displayName : 'LINE User',
       senderAvatar: userProfile ? userProfile.pictureUrl : 'https://via.placeholder.com/50',
       userId: event.source.userId,
-      content: get(event, 'message.text') || '',
+      content: messageText,
       timestamp,
       type: event.message.type,
       status: 'received',
       chatId: event.source.userId,
-      stickerId: get(event, 'message.stickerId') || '',
-      packageId: get(event, 'message.packageId') || '',
+      stickerId: messageStickerId,
+      packageId: messagePackageId,
     });
 
-    updateOrCreateChat(event.source.userId, userProfile, event.message.text, timestamp);
+    updateOrCreateChat(event.source.userId, userProfile, messageText, timestamp);
 
     // use reply API
-    return client.replyMessage({
-      replyToken: event.replyToken,
-      messages: [echo],
-    });
+    // return client.replyMessage({
+    //   replyToken: event.replyToken,
+    //   messages: [echo],
+    // });
   } catch (err) {
     console.error(err);
-    return client.replyMessage({
-      replyToken: event.replyToken,
-      messages: [echo],
-    });
+    // return client.replyMessage({
+    //   replyToken: event.replyToken,
+    //   messages: [echo],
+    // });
   }
 }
 
