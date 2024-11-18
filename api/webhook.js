@@ -2,6 +2,7 @@ const express = require('express');
 const line = require('@line/bot-sdk');
 const { db } = require('./firebase');
 const axios = require('axios');
+const { get } = require('lodash');
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET,
@@ -111,8 +112,8 @@ async function handleEvent(event) {
       type: event.message.type,
       status: 'received',
       chatId: event.source.userId,
-      stickerId: event.message.stickerId,
-      packageId: event.message.packageId,
+      stickerId: get(event, 'message.stickerId') || '',
+      packageId: get(event, 'message.packageId') || '',
     });
 
     updateOrCreateChat(event.source.userId, userProfile, event.message.text, timestamp);
