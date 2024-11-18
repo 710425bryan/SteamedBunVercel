@@ -94,7 +94,9 @@ async function handleEvent(event) {
   try {
     let messageContent = event.message.text;
     if (event.message.type === 'sticker') {
+      // sticker
       messageContent = `https://stickershop.line-scdn.net/stickershop/v1/sticker/${event.message.packageId}/iOS/${event.message.stickerId}.png`;
+      console.log('messageContent', messageContent);
     }
 
     // create an echoing text message
