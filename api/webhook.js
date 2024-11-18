@@ -3,7 +3,6 @@ const line = require('@line/bot-sdk');
 const { db } = require('./firebase');
 const axios = require('axios');
 
-
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET,
 };
@@ -30,16 +29,6 @@ app.post('/api/webhook', line.middleware(config), (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
-
-// 驗證 LINE 簽章
-const validateSignature = (body, signature) => {
-  const channelSecret = process.env.LINE_MESSAGING_CHANNEL_SECRET;
-  const hash = crypto
-    .createHmac('SHA256', channelSecret)
-    .update(JSON.stringify(body))
-    .digest('base64');
-  return hash === signature;
-};
 
 // 從 LINE 獲取用戶資料
 const getUserProfile = async (userId) => {
@@ -98,13 +87,18 @@ async function updateOrCreateChat(userId, userProfile, messageContent, timestamp
 async function handleEvent(event) {
   console.log('handleEvent event:', event);
   if (event.type !== 'message') {
-    // ignore non-text-message event
+    // ignore non-message event
     return Promise.resolve(null);
   }
 
   try {
+    let messageContent = event.message.text;
+    if (event.message.type === 'sticker') {
+      messageContent = `https://stickershop.line-scdn.net/stickershop/v1/sticker/${event.message.packageId}/iOS/${event.message.stickerId}.png`;
+    }
+
     // create an echoing text message
-    const echo = { type: 'text', text: event.message.text };
+    const echo = { type: 'text', text: messageContent };
     // save to firebase
     const messageData = event;
     const messageRef = db.ref('messages');
@@ -117,14 +111,14 @@ async function handleEvent(event) {
       senderName: userProfile ? userProfile.displayName : 'LINE User',
       senderAvatar: userProfile ? userProfile.pictureUrl : 'https://via.placeholder.com/50',
       userId: event.source.userId,
-      content: event.message.text,
+      content: messageContent,
       timestamp,
       type: event.message.type,
       status: 'received',
       chatId: event.source.userId,
     });
 
-    updateOrCreateChat(event.source.userId, userProfile, event.message.text, timestamp);
+    updateOrCreateChat(event.source.userId, userProfile, messageContent, timestamp);
 
     // use reply API
     return client.replyMessage({
@@ -138,8 +132,6 @@ async function handleEvent(event) {
       messages: [echo],
     });
   }
-
-
 }
 
 const port = process.env.PORT || 3000;
