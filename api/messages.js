@@ -81,9 +81,10 @@ app.post('/api/uploadImage', upload.single('image'), async (req, res) => {
 
     console.log('api/uploadImage file:', file)
     if (!file) {
-      return res.status(400).json({ error: 'Missing file' });
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
-    const tempFilePath = path.join(__dirname, file.name);
+    const tempFilePath = path.join(__dirname, file.originalname);
+    const destination = `uploads/${Date.now()}_${file.originalname}`;
     fs.writeFileSync(tempFilePath, file.buffer);
 
     const [uploadedFile] = await bucket.upload(tempFilePath, {
@@ -95,12 +96,13 @@ app.post('/api/uploadImage', upload.single('image'), async (req, res) => {
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${destination}`;
     console.log('File uploaded successfully:', publicUrl);
 
-    return res.status(200).json({ publicUrl });
+    return res.status(200).json({ success: true, publicUrl });
   } catch (error) {
     console.error('Error sending LINE message:', error.response?.data || error.message);
     return res.status(500).json({
       error: 'Failed to upload image',
-      details: error.response?.data || error.message
+      details: error.response?.data || error.message,
+      success: false,
     });
   }
 });
