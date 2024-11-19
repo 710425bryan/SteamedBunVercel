@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const { uploadFileImage } = require('./firebaseStorage');
 
 const app = express();
 
@@ -57,6 +58,27 @@ app.post('/api/markAsRead', async (req, res) => {
     console.error('Error sending LINE message:', error.response?.data || error.message);
     return res.status(500).json({
       error: 'Failed to send message',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+
+app.post('/api/uploadImage', async (req, res) => {
+  try {
+    const { file } = req.body;
+    console.log(file)
+    if (!file) {
+      return res.status(400).json({ error: 'Missing file' });
+    }
+
+    const response = await uploadFileImage(file);
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error sending LINE message:', error.response?.data || error.message);
+    return res.status(500).json({
+      error: 'Failed to upload image',
       details: error.response?.data || error.message
     });
   }

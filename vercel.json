@@ -21,6 +21,10 @@
     {
       "src": "/api/markAsRead",
       "dest": "api/messages.js"
+    },
+    {
+      "src": "/api/uploadImage",
+      "dest": "api/messages.js"
     }
   ]
 }
