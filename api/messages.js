@@ -67,7 +67,7 @@ app.post('/api/markAsRead', async (req, res) => {
 app.post('/api/uploadImage', async (req, res) => {
   try {
     const { file } = req.body;
-    console.log('api/uploadImage file:', req.body)
+    console.log('api/uploadImage file:', req)
     if (!file) {
       return res.status(400).json({ error: 'Missing file' });
     }
