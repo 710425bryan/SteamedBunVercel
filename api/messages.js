@@ -1,7 +1,16 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const multer = require('multer');
+
 const { bucket } = require('./firebase');
+
+// 使用 Multer 處理檔案上傳
+const upload = multer({
+  storage: multer.memoryStorage(), // 將檔案儲存到記憶體中
+  limits: { fileSize: 5 * 1024 * 1024 }, // 設定檔案大小限制為 5MB
+});
+
 
 const app = express();
 
@@ -11,6 +20,8 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+
 
 app.post('/api/messages', async (req, res) => {
   try {
@@ -64,10 +75,11 @@ app.post('/api/markAsRead', async (req, res) => {
 });
 
 
-app.post('/api/uploadImage', async (req, res) => {
+app.post('/api/uploadImage', upload.single('image'), async (req, res) => {
   try {
-    const { file } = req.body;
-    console.log('api/uploadImage file:', req)
+    const file = req.file;
+
+    console.log('api/uploadImage file:', file)
     if (!file) {
       return res.status(400).json({ error: 'Missing file' });
     }
