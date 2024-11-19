@@ -85,7 +85,7 @@ app.post('/api/uploadImage', upload.single('image'), async (req, res) => {
     if (!file) {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
-    const tempFilePath = path.join(__dirname, file.originalname);
+    const tempFilePath = path.join('/tmp', file.originalname);
     const destination = `uploads/${Date.now()}_${file.originalname}`;
     fs.writeFileSync(tempFilePath, file.buffer);
 
