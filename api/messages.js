@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const { uploadFileImage } = require('./firebaseStorage');
+const { bucket } = require('./firebase');
 
 const app = express();
 
@@ -67,14 +67,23 @@ app.post('/api/markAsRead', async (req, res) => {
 app.post('/api/uploadImage', async (req, res) => {
   try {
     const { file } = req.body;
-    console.log(file)
+    console.log('api/uploadImage file:', file)
     if (!file) {
       return res.status(400).json({ error: 'Missing file' });
     }
+    const tempFilePath = path.join(__dirname, file.name);
+    fs.writeFileSync(tempFilePath, file.buffer);
 
-    const response = await uploadFileImage(file);
+    const [uploadedFile] = await bucket.upload(tempFilePath, {
+      destination, // 在 Storage 中的目標路徑
+      public: true, // 設定檔案為公開
+    });
 
-    return res.status(200).json(response);
+    fs.unlinkSync(tempFilePath);
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${destination}`;
+    console.log('File uploaded successfully:', publicUrl);
+
+    return res.status(200).json({ publicUrl });
   } catch (error) {
     console.error('Error sending LINE message:', error.response?.data || error.message);
     return res.status(500).json({

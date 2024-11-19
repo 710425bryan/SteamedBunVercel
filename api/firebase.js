@@ -7,10 +7,11 @@ if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     databaseURL: firebaseURL,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   });
 }
 
 
 const db = admin.database();
-
-module.exports = { db };
+const bucket = admin.storage().bucket();
+module.exports = { db, bucket };
