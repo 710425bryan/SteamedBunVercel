@@ -29,6 +29,10 @@
     {
       "src": "/api/uploadImage",
       "dest": "api/messages.js"
+    },
+    {
+      "src": "/api/orders/(.*)",
+      "dest": "/api/orders"
     }
   ]
 }
