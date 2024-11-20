@@ -24,6 +24,9 @@ app.use(validateToken);
 // 創建訂單
 app.post('/api/orders', async (req, res) => {
   try {
+    console.log('Creating order with body:', req.body);
+    console.log('User from token:', req.user);
+
     const timestamp = Date.now();
     const orderNumber = `ORD${timestamp}`;
     const orderRef = db.ref(ORDERS_PATH);
@@ -39,6 +42,12 @@ app.post('/api/orders', async (req, res) => {
       hour12: true
     });
 
+    // 確保必要的字段存在
+    if (!req.user || !req.user.userId) {
+      console.error('Missing user information in token');
+      return res.status(400).json({ error: 'Invalid user information' });
+    }
+
     const orderWithMetadata = {
       ...req.body,
       id: newOrderRef.key,
@@ -49,15 +58,33 @@ app.post('/api/orders', async (req, res) => {
         new Date(req.body.expectedShipDate).toLocaleDateString('zh-TW') : null,
       status: req.body.status || 'unprocessed',
       totalAmount: req.body.totalAmount || 0,
-      userId: req.user.userId
+      userId: req.user.userId,
+      userProfile: {
+        name: req.user.userProfile?.displayName || 'Unknown',
+        picture: req.user.userProfile?.pictureUrl || null
+      }
     };
+
+    console.log('Saving order with data:', orderWithMetadata);
 
     await newOrderRef.set(orderWithMetadata);
     console.log('Order created successfully:', newOrderRef.key);
-    res.status(201).json({ id: newOrderRef.key, ...orderWithMetadata });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        id: newOrderRef.key,
+        ...orderWithMetadata
+      }
+    });
   } catch (error) {
     console.error('Error creating order:', error);
-    res.status(500).json({ error: 'Failed to create order' });
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({
+      error: 'Failed to create order',
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

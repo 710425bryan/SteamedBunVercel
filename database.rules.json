@@ -1,0 +1,35 @@
+{
+  "rules": {
+    "auth_tokens": {
+      ".indexOn": [
+        "token"
+      ],
+      ".read": true,
+      ".write": true
+    },
+    "orders": {
+      ".indexOn": [
+        "userId",
+        "createdAt"
+      ],
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "messages": {
+      ".indexOn": [
+        "userId",
+        "timestamp"
+      ],
+      ".read": true,
+      ".write": true
+    },
+    "chats": {
+      ".indexOn": [
+        "userId",
+        "updatedAt"
+      ],
+      ".read": true,
+      ".write": true
+    }
+  }
+}
