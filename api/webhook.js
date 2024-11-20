@@ -158,7 +158,7 @@ app.post('/api/line-login', async (req, res) => {
     params.append('code', code);
     params.append('redirect_uri', redirectUri);
     params.append('client_id', process.env.LINE_CLIENT_ID);
-    params.append('client_secret', process.env.LINE_CHANNEL_SECRET);
+    params.append('client_secret', process.env.LINE_CLIENT_SECRET);
 
     console.log('Requesting LINE token with params:', params.toString());
 
