@@ -6,6 +6,10 @@ const { get } = require('lodash');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+const { promisify } = require('util');
+const writeFileAsync = promisify(fs.writeFile);
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET,
@@ -128,46 +132,156 @@ async function updateOrCreateChat(userId, userProfile, messageContent, timestamp
   }
 };
 
-// event handler
+// 添加獲取 LINE 內容的函數
+const getLineContent = async (messageId) => {
+  try {
+    const response = await axios.get(
+      `https://api-data.line.me/v2/bot/message/${messageId}/content`,
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.LINE_MESSAGING_CHANNEL_TOKEN}`
+        },
+        responseType: 'arraybuffer'
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching LINE content:', error);
+    throw error;
+  }
+};
+
+// 修改 handleEvent 函數
 async function handleEvent(event) {
   console.log('handleEvent event:', event);
   if (event.type !== 'message') {
-    // ignore non-message event
     return Promise.resolve(null);
   }
 
   try {
-    const messageText = get(event, 'message.text') || '';
-    const messageStickerId = get(event, 'message.stickerId') || '';
-    const messagePackageId = get(event, 'message.packageId') || '';
-    // create an echoing text message
-    const echo = { type: 'text', text: messageText };
-    // save to firebase
-    const messageData = event;
-    const messageRef = db.ref('messages');
     const timestamp = new Date().toISOString();
     const userProfile = await getUserProfile(event.source.userId);
+    let messageContent = '';
+    let fileUrl = null;
+    let fileName = null;
+    let fileSize = null;
 
+    // 根據消息類型處理
+    switch (event.message.type) {
+      case 'text':
+        messageContent = event.message.text;
+        break;
 
+      case 'image':
+        try {
+          const imageData = await getLineContent(event.message.id);
+          const imageFileName = `${event.message.id}.jpg`;
+          const imagePath = path.join('/tmp', imageFileName);
 
+          // 保存圖片到臨時目錄
+          await writeFileAsync(imagePath, imageData);
+
+          // 這裡你需要實現上傳到你的存儲服務的邏輯
+          // 例如上傳到 Firebase Storage
+          const storageRef = admin.storage().bucket();
+          const uploadResponse = await storageRef.upload(imagePath, {
+            destination: `line-images/${imageFileName}`,
+            metadata: {
+              contentType: 'image/jpeg',
+            }
+          });
+
+          // 獲取公開訪問 URL
+          fileUrl = await uploadResponse[0].getSignedUrl({
+            action: 'read',
+            expires: '03-01-2500'
+          });
+
+          messageContent = 'Image';
+          fileName = imageFileName;
+
+          // 清理臨時文件
+          fs.unlinkSync(imagePath);
+        } catch (error) {
+          console.error('Error handling image:', error);
+        }
+        break;
+
+      case 'file':
+        try {
+          const fileData = await getLineContent(event.message.id);
+          const originalFileName = event.message.fileName;
+          const fileExtension = path.extname(originalFileName);
+          const safeFileName = `${event.message.id}${fileExtension}`;
+          const filePath = path.join('/tmp', safeFileName);
+
+          // 保存文件到臨時目錄
+          await writeFileAsync(filePath, fileData);
+
+          // 上傳到 Firebase Storage
+          const storageRef = admin.storage().bucket();
+          const uploadResponse = await storageRef.upload(filePath, {
+            destination: `line-files/${safeFileName}`,
+            metadata: {
+              contentType: event.message.contentProvider.contentType,
+            }
+          });
+
+          // 獲取公開訪問 URL
+          fileUrl = await uploadResponse[0].getSignedUrl({
+            action: 'read',
+            expires: '03-01-2500'
+          });
+
+          messageContent = 'File';
+          fileName = originalFileName;
+          fileSize = event.message.fileSize;
+
+          // 清理臨時文件
+          fs.unlinkSync(filePath);
+        } catch (error) {
+          console.error('Error handling file:', error);
+        }
+        break;
+
+      case 'sticker':
+        messageContent = 'Sticker';
+        break;
+
+      default:
+        messageContent = `Unsupported message type: ${event.message.type}`;
+    }
+
+    // 保存消息到 Firebase
+    const messageRef = db.ref('messages');
     await messageRef.push({
-      ...messageData,
+      ...event,
       senderId: event.source.userId,
       senderName: userProfile ? userProfile.displayName : 'LINE User',
       senderAvatar: userProfile ? userProfile.pictureUrl : 'https://via.placeholder.com/50',
       userId: event.source.userId,
-      content: messageText,
+      content: messageContent,
       timestamp,
       type: event.message.type,
       status: 'received',
       chatId: event.source.userId,
-      stickerId: messageStickerId,
-      packageId: messagePackageId,
+      fileUrl,
+      fileName,
+      fileSize,
+      stickerId: event.message.type === 'sticker' ? event.message.stickerId : null,
+      packageId: event.message.type === 'sticker' ? event.message.packageId : null,
     });
 
-    updateOrCreateChat(event.source.userId, userProfile, messageText, timestamp);
-  } catch (err) {
-    console.error(err);
+    // 更新聊天室信息
+    await updateOrCreateChat(
+      event.source.userId,
+      userProfile,
+      messageContent,
+      timestamp
+    );
+
+  } catch (error) {
+    console.error('Error in handleEvent:', error);
   }
 }
 
