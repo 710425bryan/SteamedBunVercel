@@ -139,13 +139,18 @@ async function handleEvent(event) {
 // 添加新的路由來處理 LINE 登入
 app.post('/api/line-login', async (req, res) => {
   try {
-    const { code } = req.body;
+    const { code, redirectUri } = req.body;
+
+    if (!code || !redirectUri) {
+      console.log('Missing code or redirectUri', code, redirectUri);
+      return res.status(400).json({ error: 'Missing code or redirectUri' });
+    }
 
     // 向 LINE 請求訪問令牌
     const tokenResponse = await axios.post('https://api.line.me/oauth2/v2.1/token', {
       grant_type: 'authorization_code',
       code,
-      redirect_uri: process.env.LINE_LOGIN_REDIRECT_URI,
+      redirect_uri: redirectUri,
       client_id: process.env.LINE_CLIENT_ID,
       client_secret: process.env.LINE_CHANNEL_SECRET
     });
