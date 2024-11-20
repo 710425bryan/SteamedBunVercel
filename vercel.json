@@ -1,34 +1,70 @@
 {
+  "version": 2,
   "builds": [
     {
-      "src": "api/*.js",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api",
-      "dest": "api/index.js"
-    },
-    {
       "src": "/api/webhook",
-      "dest": "api/webhook.js"
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "dest": "/api/webhook.js"
     },
     {
       "src": "/api/line-login",
-      "dest": "api/webhook.js"
+      "methods": [
+        "POST"
+      ],
+      "dest": "/api/webhook.js"
     },
     {
-      "src": "/api/messages",
-      "dest": "api/messages.js"
+      "src": "/api/orders",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "dest": "/api/orders.js"
     },
     {
-      "src": "/api/markAsRead",
-      "dest": "api/messages.js"
+      "src": "/api/orders/(.*)",
+      "methods": [
+        "GET",
+        "PUT",
+        "DELETE"
+      ],
+      "dest": "/api/orders.js"
     },
     {
-      "src": "/api/uploadImage",
-      "dest": "api/messages.js"
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, x-line-signature"
+        }
+      ]
     }
   ]
 }
