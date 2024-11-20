@@ -53,6 +53,7 @@ app.post('/api/orders', async (req, res) => {
     };
 
     await newOrderRef.set(orderWithMetadata);
+    console.log('Order created successfully:', newOrderRef.key);
     res.status(201).json({ id: newOrderRef.key, ...orderWithMetadata });
   } catch (error) {
     console.error('Error creating order:', error);
