@@ -35,19 +35,6 @@
     },
     {
       "src": "/api/orders",
-      "methods": [
-        "GET",
-        "POST"
-      ],
-      "dest": "api/orders.js"
-    },
-    {
-      "src": "/api/orders/(.*)",
-      "methods": [
-        "GET",
-        "PUT",
-        "DELETE"
-      ],
       "dest": "api/orders.js"
     },
     {
