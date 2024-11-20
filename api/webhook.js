@@ -5,6 +5,7 @@ const axios = require('axios');
 const { get } = require('lodash');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
+const cors = require('cors');
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET,
@@ -16,6 +17,10 @@ const client = new line.messagingApi.MessagingApiClient({
 
 const app = express();
 
+app.use(cors({
+  origin: '*', // 替換為你的前端域名，或用 '*' 允許所有來源
+  methods: ['GET', 'POST'] // 根據需求添加其他方法，如 'PUT', 'DELETE' 等
+}));
 const { validateToken } = require('./middleware/auth');
 
 // Line Webhook Endpoint
