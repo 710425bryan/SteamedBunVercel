@@ -15,6 +15,10 @@
       "dest": "api/webhook.js"
     },
     {
+      "src": "/api/line-login",
+      "dest": "api/webhook.js"
+    },
+    {
       "src": "/api/messages",
       "dest": "api/messages.js"
     },

@@ -4,6 +4,7 @@ const { db } = require('./firebase');
 const axios = require('axios');
 const { get } = require('lodash');
 const admin = require('firebase-admin');
+const crypto = require('crypto');
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET,
@@ -15,8 +16,10 @@ const client = new line.messagingApi.MessagingApiClient({
 
 const app = express();
 
+const { validateToken } = require('./middleware/auth');
+
 // Line Webhook Endpoint
-app.post('/api/webhook', line.middleware(config), (req, res) => {
+app.post('/api/webhook', validateToken, line.middleware(config), (req, res) => {
   console.log('req.body.events', req.body.events);
 
   try {
@@ -123,20 +126,49 @@ async function handleEvent(event) {
     });
 
     updateOrCreateChat(event.source.userId, userProfile, messageText, timestamp);
-
-    // use reply API
-    // return client.replyMessage({
-    //   replyToken: event.replyToken,
-    //   messages: [echo],
-    // });
   } catch (err) {
     console.error(err);
-    // return client.replyMessage({
-    //   replyToken: event.replyToken,
-    //   messages: [echo],
-    // });
   }
 }
+
+// 添加新的路由來處理 LINE 登入
+app.post('/api/line-login', async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    // 向 LINE 請求訪問令牌
+    const tokenResponse = await axios.post('https://api.line.me/oauth2/v2.1/token', {
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: process.env.LINE_LOGIN_REDIRECT_URI,
+      client_id: process.env.LINE_LOGIN_CHANNEL_ID,
+      client_secret: process.env.LINE_LOGIN_CHANNEL_SECRET
+    });
+
+    const { access_token, id_token } = tokenResponse.data;
+
+    // 獲取用戶資料
+    const userProfile = await getUserProfile(access_token);
+
+    // 生成自定義 token
+    const customToken = crypto.randomBytes(32).toString('hex');
+
+    // 存儲到 Firebase
+    const tokenRef = db.ref('auth_tokens');
+    await tokenRef.push({
+      token: customToken,
+      lineAccessToken: access_token,
+      userId: userProfile.userId,
+      createdAt: new Date().toISOString(),
+      userProfile
+    });
+
+    res.json({ token: customToken, user: userProfile });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
