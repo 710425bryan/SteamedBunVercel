@@ -1,10 +1,4 @@
 {
-  "version": 2,
-  "git": {
-    "deploymentEnabled": {
-      "master": true
-    }
-  },
   "builds": [
     {
       "src": "api/*.js",
