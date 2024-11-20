@@ -38,6 +38,10 @@
       "dest": "api/orders.js"
     },
     {
+      "src": "/api/orders/:orderId",
+      "dest": "api/orders.js"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "api/index.js"
     }

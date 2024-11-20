@@ -24,9 +24,6 @@ app.use(validateToken);
 // 創建訂單
 app.post('/api/orders', async (req, res) => {
   try {
-    console.log('Creating order with body:', req.body);
-    console.log('User from token:', req.user);
-
     const timestamp = Date.now();
     const orderNumber = `ORD${timestamp}`;
     const orderRef = db.ref(ORDERS_PATH);
@@ -65,10 +62,8 @@ app.post('/api/orders', async (req, res) => {
       }
     };
 
-    console.log('Saving order with data:', orderWithMetadata);
 
     await newOrderRef.set(orderWithMetadata);
-    console.log('Order created successfully:', newOrderRef.key);
 
     res.status(201).json({
       success: true,
@@ -79,7 +74,6 @@ app.post('/api/orders', async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating order:', error);
-    console.error('Stack trace:', error.stack);
     res.status(500).json({
       error: 'Failed to create order',
       message: error.message,
