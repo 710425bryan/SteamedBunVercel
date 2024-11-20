@@ -1,26 +1,28 @@
 const express = require('express');
-const router = express.Router();
 const { db } = require('./firebase');
 const { validateToken } = require('./middleware/auth');
 const cors = require('cors');
 
+const app = express();
 const ORDERS_PATH = 'orders';
 
-// CORS 配置
-router.use(cors({
+// 中間件設置
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // OPTIONS 請求處理
-router.options('*', cors());
+app.options('*', cors());
 
-// 所有訂單相關的路由都需要驗證
-router.use(validateToken);
+// 驗證中間件
+app.use(validateToken);
 
 // 創建訂單
-router.post('/', async (req, res) => {
+app.post('/api/orders', async (req, res) => {
   try {
     const timestamp = Date.now();
     const orderNumber = `ORD${timestamp}`;
@@ -47,7 +49,7 @@ router.post('/', async (req, res) => {
         new Date(req.body.expectedShipDate).toLocaleDateString('zh-TW') : null,
       status: req.body.status || 'unprocessed',
       totalAmount: req.body.totalAmount || 0,
-      userId: req.user.userId // 從驗證中間件獲取用戶ID
+      userId: req.user.userId
     };
 
     await newOrderRef.set(orderWithMetadata);
@@ -59,7 +61,7 @@ router.post('/', async (req, res) => {
 });
 
 // 更新訂單
-router.put('/:orderId', async (req, res) => {
+app.put('/api/orders/:orderId', async (req, res) => {
   try {
     const { orderId } = req.params;
     const orderRef = db.ref(`${ORDERS_PATH}/${orderId}`);
@@ -79,7 +81,7 @@ router.put('/:orderId', async (req, res) => {
 });
 
 // 獲取所有訂單
-router.get('/', async (req, res) => {
+app.get('/api/orders', async (req, res) => {
   try {
     const { status, startDate, endDate } = req.query;
     const ordersRef = db.ref(ORDERS_PATH);
@@ -94,7 +96,6 @@ router.get('/', async (req, res) => {
       ...value
     }));
 
-    // 應用過濾器
     if (status && status !== 'all') {
       orders = orders.filter(order => order.status === status);
     }
@@ -119,7 +120,7 @@ router.get('/', async (req, res) => {
 });
 
 // 獲取單個訂單
-router.get('/:orderId', async (req, res) => {
+app.get('/api/orders/:orderId', async (req, res) => {
   try {
     const { orderId } = req.params;
     const orderRef = db.ref(`${ORDERS_PATH}/${orderId}`);
@@ -137,7 +138,7 @@ router.get('/:orderId', async (req, res) => {
 });
 
 // 刪除訂單
-router.delete('/:orderId', async (req, res) => {
+app.delete('/api/orders/:orderId', async (req, res) => {
   try {
     const { orderId } = req.params;
     const orderRef = db.ref(`${ORDERS_PATH}/${orderId}`);
@@ -149,4 +150,4 @@ router.delete('/:orderId', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = app;
