@@ -2,8 +2,19 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('./firebase');
 const { validateToken } = require('./middleware/auth');
+const cors = require('cors');
 
 const ORDERS_PATH = 'orders';
+
+// CORS 配置
+router.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// OPTIONS 請求處理
+router.options('*', cors());
 
 // 所有訂單相關的路由都需要驗證
 router.use(validateToken);
