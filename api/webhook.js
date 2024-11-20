@@ -17,6 +17,10 @@ const client = new line.messagingApi.MessagingApiClient({
 
 const app = express();
 
+// 添加這些中間件在其他路由之前
+app.use(express.json());  // 用於解析 application/json
+app.use(express.urlencoded({ extended: true }));  // 用於解析 application/x-www-form-urlencoded
+
 app.use(cors({
   origin: '*', // 替換為你的前端域名，或用 '*' 允許所有來源
   methods: ['GET', 'POST'] // 根據需求添加其他方法，如 'PUT', 'DELETE' 等
