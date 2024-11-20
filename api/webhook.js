@@ -141,8 +141,8 @@ app.post('/api/line-login', async (req, res) => {
       grant_type: 'authorization_code',
       code,
       redirect_uri: process.env.LINE_LOGIN_REDIRECT_URI,
-      client_id: process.env.LINE_LOGIN_CHANNEL_ID,
-      client_secret: process.env.LINE_LOGIN_CHANNEL_SECRET
+      client_id: process.env.LINE_CLIENT_ID,
+      client_secret: process.env.LINE_CHANNEL_SECRET
     });
 
     const { access_token, id_token } = tokenResponse.data;
