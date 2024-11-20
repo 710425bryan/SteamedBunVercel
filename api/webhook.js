@@ -145,24 +145,46 @@ app.post('/api/line-login', async (req, res) => {
   try {
     const { code, redirectUri } = req.body;
 
+    console.log('Received login request:', { code, redirectUri });
+
     if (!code || !redirectUri) {
-      console.log('Missing code or redirectUri', code, redirectUri);
+      console.log('Missing required parameters:', { code, redirectUri });
       return res.status(400).json({ error: 'Missing code or redirectUri' });
     }
 
+    // 準備 LINE Token 請求的表單數據
+    const params = new URLSearchParams();
+    params.append('grant_type', 'authorization_code');
+    params.append('code', code);
+    params.append('redirect_uri', redirectUri);
+    params.append('client_id', process.env.LINE_CLIENT_ID);
+    params.append('client_secret', process.env.LINE_CHANNEL_SECRET);
+
+    console.log('Requesting LINE token with params:', params.toString());
+
     // 向 LINE 請求訪問令牌
-    const tokenResponse = await axios.post('https://api.line.me/oauth2/v2.1/token', {
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: redirectUri,
-      client_id: process.env.LINE_CLIENT_ID,
-      client_secret: process.env.LINE_CHANNEL_SECRET
-    });
+    const tokenResponse = await axios.post(
+      'https://api.line.me/oauth2/v2.1/token',
+      params,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    console.log('LINE token response:', tokenResponse.data);
 
     const { access_token, id_token } = tokenResponse.data;
 
-    // 獲取用戶資料
-    const userProfile = await getUserProfile(access_token);
+    // 使用 access_token 獲取用戶資料
+    const userProfile = await axios.get('https://api.line.me/v2/profile', {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+
+    console.log('User profile:', userProfile.data);
 
     // 生成自定義 token
     const customToken = crypto.randomBytes(32).toString('hex');
@@ -172,15 +194,28 @@ app.post('/api/line-login', async (req, res) => {
     await tokenRef.push({
       token: customToken,
       lineAccessToken: access_token,
-      userId: userProfile.userId,
+      userId: userProfile.data.userId,
       createdAt: new Date().toISOString(),
-      userProfile
+      userProfile: userProfile.data
     });
 
-    res.json({ token: customToken, user: userProfile });
+    res.json({
+      token: customToken,
+      user: userProfile.data
+    });
+
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
+    console.error('Login error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.response?.headers
+    });
+
+    res.status(500).json({
+      error: 'Login failed',
+      details: error.response?.data || error.message
+    });
   }
 });
 
