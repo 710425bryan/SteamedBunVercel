@@ -38,7 +38,7 @@
       "dest": "api/orders.js"
     },
     {
-      "src": "/api/orders/:orderId",
+      "src": "/api/orders/(.*)",
       "dest": "api/orders.js"
     },
     {
