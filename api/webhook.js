@@ -9,6 +9,7 @@ const cors = require('cors');
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET,
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN
 };
 
 // const client = new line.messagingApi.MessagingApiClient({
@@ -17,29 +18,60 @@ const config = {
 
 const app = express();
 
-// 添加這些中間件在其他路由之前
-app.use(express.json());  // 用於解析 application/json
-app.use(express.urlencoded({ extended: true }));  // 用於解析 application/x-www-form-urlencoded
-
+// 這些中間件必須在 webhook 路由之前
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
+app.use(express.urlencoded({ extended: true }));
 app.use(cors({
-  origin: '*', // 替換為你的前端域名，或用 '*' 允許所有來源
-  methods: ['GET', 'POST'] // 根據需求添加其他方法，如 'PUT', 'DELETE' 等
+  origin: '*',
+  methods: ['GET', 'POST']
 }));
 
+// 添加簽名驗證的輔助函數
+const validateSignature = (body, signature, channelSecret) => {
+  const hash = crypto
+    .createHmac('SHA256', channelSecret)
+    .update(Buffer.from(JSON.stringify(body)))
+    .digest('base64');
+  return hash === signature;
+};
+
 // Line Webhook Endpoint
-app.post('/api/webhook', line.middleware(config), (req, res) => {
-  console.log('req.body.events', req.body.events);
+app.post('/api/webhook', (req, res) => {
+  console.log('Received webhook request');
+  console.log('Headers:', req.headers);
+  console.log('Body:', req.body);
+
+  const signature = req.headers['x-line-signature'];
+
+  // 檢查簽名是否存在
+  if (!signature) {
+    console.error('No signature found in headers');
+    return res.status(400).json({ error: 'No signature' });
+  }
+
+  // 驗證簽名
+  const isValid = validateSignature(req.body, signature, config.channelSecret);
+  if (!isValid) {
+    console.error('Signature validation failed');
+    console.error('Channel Secret:', config.channelSecret);
+    console.error('Received Signature:', signature);
+    return res.status(400).json({ error: 'Invalid signature' });
+  }
 
   try {
     Promise.all(req.body.events.map(handleEvent))
       .then((result) => res.status(200).json(result))
       .catch((error) => {
         console.error('Webhook error:', error);
-        res.status(200).end();  // LINE 要求即使發生錯誤也要返回 200
+        res.status(200).end();
       });
   } catch (error) {
     console.error('Webhook error:', error);
-    res.status(200).end();  // LINE 要求即使發生錯誤也要返回 200
+    res.status(200).end();
   }
 });
 
