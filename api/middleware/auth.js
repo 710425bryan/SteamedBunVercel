@@ -5,6 +5,7 @@ const validateToken = async (req, res, next) => {
     const token = req.headers.authorization?.split('Bearer ')[1];
 
     if (!token) {
+      console.log('No token provided');
       return res.status(401).json({ error: 'No token provided' });
     }
 
@@ -14,6 +15,7 @@ const validateToken = async (req, res, next) => {
     const tokenData = snapshot.val();
 
     if (!tokenData) {
+      console.log('Invalid token');
       return res.status(401).json({ error: 'Invalid token' });
     }
 
