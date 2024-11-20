@@ -25,10 +25,9 @@ app.use(cors({
   origin: '*', // 替換為你的前端域名，或用 '*' 允許所有來源
   methods: ['GET', 'POST'] // 根據需求添加其他方法，如 'PUT', 'DELETE' 等
 }));
-const { validateToken } = require('./middleware/auth');
 
 // Line Webhook Endpoint
-app.post('/api/webhook', validateToken, line.middleware(config), (req, res) => {
+app.post('/api/webhook', line.middleware(config), (req, res) => {
   console.log('req.body.events', req.body.events);
 
   try {
