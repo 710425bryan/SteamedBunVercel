@@ -9,6 +9,7 @@ const cors = require('cors');
 
 const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET,
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN
 };
 
 const client = new line.messagingApi.MessagingApiClient({
@@ -32,14 +33,14 @@ app.post('/api/webhook', line.middleware(config), (req, res) => {
 
   try {
     Promise.all(req.body.events.map(handleEvent))
-      .then((result) => res.status(200).json(result))  // 確保回傳 200
-      .catch((err) => {
+      .then((result) => res.status(200).json(result))
+      .catch((error) => {
         console.error('Webhook error:', error);
-        res.status(200).end();
+        res.status(200).end();  // LINE 要求即使發生錯誤也要返回 200
       });
   } catch (error) {
     console.error('Webhook error:', error);
-    res.status(500).send('Internal Server Error');
+    res.status(200).end();  // LINE 要求即使發生錯誤也要返回 200
   }
 });
 
