@@ -16,10 +16,6 @@ const config = {
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN
 };
 
-// const client = new line.messagingApi.MessagingApiClient({
-//   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
-// });
-
 const app = express();
 
 // 這些中間件必須在 webhook 路由之前
@@ -246,6 +242,71 @@ async function handleEvent(event) {
 
       case 'sticker':
         messageContent = 'Sticker';
+        break;
+
+      case 'video':
+        try {
+          const videoData = await getLineContent(event.message.id);
+          const videoFileName = `${event.message.id}.mp4`;
+          const videoPath = path.join('/tmp', videoFileName);
+
+          // 保存視頻到臨時目錄
+          await writeFileAsync(videoPath, videoData);
+
+          // 上傳到 Firebase Storage
+          const storageRef = admin.storage().bucket();
+          const uploadResponse = await storageRef.upload(videoPath, {
+            destination: `line-videos/${videoFileName}`,
+            metadata: {
+              contentType: 'video/mp4',
+            }
+          });
+
+          // 獲取公開訪問 URL
+          fileUrl = await uploadResponse[0].getSignedUrl({
+            action: 'read',
+            expires: '03-01-2500'
+          });
+
+          messageContent = 'Video';
+          fileName = videoFileName;
+
+          // 如果有縮略圖，也處理縮略圖
+          if (event.message.thumbnailId) {
+            const thumbnailData = await getLineContent(event.message.thumbnailId);
+            const thumbnailFileName = `${event.message.id}_thumb.jpg`;
+            const thumbnailPath = path.join('/tmp', thumbnailFileName);
+
+            await writeFileAsync(thumbnailPath, thumbnailData);
+
+            const thumbnailUpload = await storageRef.upload(thumbnailPath, {
+              destination: `line-videos/thumbnails/${thumbnailFileName}`,
+              metadata: {
+                contentType: 'image/jpeg',
+              }
+            });
+
+            const thumbnailUrl = await thumbnailUpload[0].getSignedUrl({
+              action: 'read',
+              expires: '03-01-2500'
+            });
+
+            // 添加縮略圖 URL 到消息數據中
+            fileUrl = {
+              video: fileUrl,
+              thumbnail: thumbnailUrl
+            };
+
+            // 清理縮略圖臨時文件
+            fs.unlinkSync(thumbnailPath);
+          }
+
+          // 清理視頻臨時文件
+          fs.unlinkSync(videoPath);
+        } catch (error) {
+          console.error('Error handling video:', error);
+          console.error('Error details:', error.response?.data);
+        }
         break;
 
       default:
